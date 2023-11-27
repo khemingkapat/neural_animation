@@ -1,4 +1,4 @@
-from Neural_Network import *
+from neural_network import *
 import numpy as np
 
 nw = Network(10, [3, 5], [ReLU(), SoftMax()])
