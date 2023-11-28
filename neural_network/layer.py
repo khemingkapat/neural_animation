@@ -8,4 +8,14 @@ class Layer:
         self.activation = activation
 
     def forward(self, input):
-        return self.activation.activate(self.weight.dot(input) + self.bias)
+        self.input = input
+        self.output = self.activation.activate(self.weight.dot(input) + self.bias)
+        return self.output
+
+    def backward(self, out_grad, learning_rate):
+        weight_grad = out_grad.dot(self.input.T)
+        self.weight -= (
+            weight_grad * learning_rate * self.activation.derivative(self.output)
+        )
+        self.bias -= out_grad * learning_rate * self.activation.derivative(self.output)
+        return self.weight.T.dot(out_grad)
