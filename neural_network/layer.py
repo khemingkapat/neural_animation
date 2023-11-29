@@ -17,5 +17,5 @@ class Layer:
         self.weight -= (
             weight_grad * learning_rate * self.activation.derivative(self.output)
         )
-        self.bias -= out_grad * learning_rate * self.activation.derivative(self.output)
+        self.bias -= learning_rate * out_grad * self.activation.derivative(self.output)
         return self.weight.T.dot(out_grad)

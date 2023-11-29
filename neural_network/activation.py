@@ -7,28 +7,29 @@ class Activation(ABC):
         self.compound = compound
 
     @abstractmethod
-    def activate(self, input):
+    def activate(self, **kwargs):
         pass
 
     @abstractmethod
-    def derivative(self):
+    def derivative(self, **kwargs):
         pass
 
 
 class ReLU(Activation):
-    def activate(self, input):
+    def activate(self, input, **kwargs):
         return np.maximum(input, 0)
 
-    def derivative(self, z):
+    def derivative(self, z, **kwargs):
         return z > 0
 
 
 class SoftMax(Activation):
-    def activate(self, input):
+    def activate(self, input, **kwargs):
         return np.exp(input) / sum(np.exp(input))
 
-    def derivative(self, z):
-        result = np.diag(z)
+    def derivative(self, z, **kwargs):
+        print(f"{z.shape=}")
+        result = np.zeros((z.size, z.size))
         for i in range(z.size):
             for j in range(z.size):
                 if i == j:

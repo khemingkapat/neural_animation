@@ -1,17 +1,11 @@
 from neural_network import *
 import numpy as np
 
-np.random.seed(0)
-l1 = Layer(5, 5, ReLU())
-print(l1.weight)
-sample_data = np.random.rand(5, 1)
+nw = Network(10, [5, 5, 3], [ReLU(), ReLU(), ReLU(), SoftMax()])
 
-y = np.zeros((5, 1))
-y[1] = 1
-for _ in range(20):
-    result = l1.forward(sample_data)
-    err = ((y - result) ** 2).sum() / y.size
-    print(f"{err=}")
-    print("-" * 50)
-    out_grad = (2 * (result - y)) / y.size
-    dx = l1.backward(out_grad, 0.1)
+
+sample_data = np.random.rand(10, 1)
+y = np.zeros((3, 1))
+y[2] = 1
+
+print(nw.gradient_descent(sample_data, y, 0.5, 20))
