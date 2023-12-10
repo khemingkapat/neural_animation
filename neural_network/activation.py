@@ -1,39 +1,35 @@
-from abc import ABC, abstractmethod
 import numpy as np
 
 
-class Activation(ABC):
-    def __init__(self, compound=None):
-        self.compound = compound
+class Activation:
+    def __init__(self, activation, activation_prime):
+        self.activation = activation
+        self.activation_prime = activation_prime
 
-    @abstractmethod
-    def activate(self, **kwargs):
-        pass
+    def activate(self, input):
+        self.input = input
+        return self.activation(self.input)
 
-    @abstractmethod
-    def derivative(self, **kwargs):
-        pass
+    def derivative(self):
+        return self.activation_prime(self.input)
+
+
+class PassThrough(Activation):
+    def __init__(self):
+        pass_through = lambda x: x
+        pass_through_prime = lambda x: 1
+        super().__init__(pass_through, pass_through_prime)
 
 
 class ReLU(Activation):
-    def activate(self, input, **kwargs):
-        return np.maximum(input, 0)
+    def __init__(self):
+        relu = lambda x: np.maximum(0, x)
+        relu_prime = lambda x: x > 0
+        super().__init__(relu, relu_prime)
 
-    def derivative(self, z, **kwargs):
-        return z > 0
 
-
-class SoftMax(Activation):
-    def activate(self, input, **kwargs):
-        return np.exp(input) / sum(np.exp(input))
-
-    def derivative(self, z, **kwargs):
-        print(f"{z.shape=}")
-        result = np.zeros((z.size, z.size))
-        for i in range(z.size):
-            for j in range(z.size):
-                if i == j:
-                    result[i, j] = z[i] * (1 - z[i])
-                else:
-                    result[i, j] = -z[i] * z[j]
-        return result
+class SigMoid(Activation):
+    def __init__(self):
+        sigmoid = lambda x: 1 / 1 + np.exp(-x)
+        sigmoid_prime = lambda x: x * (1 - x)
+        super().__init__(sigmoid, sigmoid_prime)

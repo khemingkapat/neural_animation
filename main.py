@@ -1,11 +1,9 @@
 from neural_network import *
 import numpy as np
+import pandas as pd
 
-nw = Network(10, [5, 5, 3], [ReLU(), ReLU(), ReLU(), SoftMax()])
+x = np.array([[1, 1, 0, 0], [1, 0, 1, 0]])
+y = np.array([0, 1, 1, 0])
 
-
-sample_data = np.random.rand(10, 1)
-y = np.zeros((3, 1))
-y[2] = 1
-
-print(nw.gradient_descent(sample_data, y, 0.5, 20))
+nw = Network(2, [3, 2], [ReLU(), SigMoid()])
+nw.gradient_descent(x, y, 0.2, 1000)

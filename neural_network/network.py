@@ -12,23 +12,30 @@ class Network:
                 Layer(all_neurons[i - 1], all_neurons[i], activations[i - 1])
             )
 
-    def forward(self, x, **kwargs):
+    def forward(self, x):
         for layer in self.layers:
-            x = layer.forward(x, **kwargs)
+            x = layer.forward(x)
+
         self.z = x
         return self.z
 
-    @property
-    def result(self):
-        return np.argmax(self.z, 0)
+    def accuracy(self, y):
+        prediction = np.argmax(self.z, 0)
+        print(self.z)
+        print(prediction)
+        return (prediction == y).mean()
 
     def gradient_descent(self, x, y, learning_rate, iterations):
+        y_true = np.eye(x.shape[0])[y].T
         for iter in range(iterations):
             self.forward(x)
-            out_grad = (2 * (self.z - y)) / y.size
-            mse = np.power((self.z - y), 2).mean()
-            print(f"{iter=} <- -> {mse=}")
 
+            out_grad = (2 / y.shape[0]) * (self.z - y_true)
+            mse = ((y_true - self.z) ** 2).mean()
+            if iter % 10 == 0:
+                print(f"iter {iter} ==> mse = {mse}")
+                print(f"Accuracy ==> {self.accuracy(y)}")
+                print("-" * 30)
             for l in self.layers[::-1]:
                 out_grad = l.backward(out_grad, learning_rate)
 

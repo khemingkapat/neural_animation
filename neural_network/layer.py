@@ -9,13 +9,17 @@ class Layer:
 
     def forward(self, input):
         self.input = input
-        self.output = self.activation.activate(self.weight.dot(input) + self.bias)
+        self.linear_output = self.weight.dot(input) + self.bias
+        self.output = self.activation.activate(self.linear_output)
         return self.output
 
     def backward(self, out_grad, learning_rate):
-        weight_grad = out_grad.dot(self.input.T)
-        self.weight -= (
-            weight_grad * learning_rate * self.activation.derivative(self.output)
-        )
-        self.bias -= learning_rate * out_grad * self.activation.derivative(self.output)
-        return self.weight.T.dot(out_grad)
+        _, m = self.input.shape
+        # print(m)
+        act_grad = np.multiply(out_grad, self.activation.derivative()) / m
+        weight_grad = act_grad.dot(self.input.T)
+        # print(weight_grad.sum())
+        bias_grad = act_grad.sum(axis=1).reshape(self.bias.shape)
+        self.weight -= learning_rate * weight_grad
+        self.bias -= learning_rate * bias_grad
+        return self.weight.T.dot(act_grad)
