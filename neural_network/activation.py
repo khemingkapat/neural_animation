@@ -1,17 +1,18 @@
 import numpy as np
+from .layer import Layer
 
 
-class Activation:
+class Activation(Layer):
     def __init__(self, activation, activation_prime):
         self.activation = activation
         self.activation_prime = activation_prime
 
-    def activate(self, input):
+    def forward(self, input):
         self.input = input
         return self.activation(self.input)
 
-    def derivative(self):
-        return self.activation_prime(self.input)
+    def backward(self, out_grad, learning_rate):
+        return np.multiply(out_grad, self.activation_prime(self.input))
 
 
 class PassThrough(Activation):
@@ -28,8 +29,8 @@ class ReLU(Activation):
         super().__init__(relu, relu_prime)
 
 
-class SigMoid(Activation):
+class Tanh(Activation):
     def __init__(self):
-        sigmoid = lambda x: 1 / 1 + np.exp(-x)
-        sigmoid_prime = lambda x: x * (1 - x)
-        super().__init__(sigmoid, sigmoid_prime)
+        tanh = lambda x: np.tanh(x)
+        tanh_prime = lambda x: 1 - np.tanh(x) ** 2
+        super().__init__(tanh, tanh_prime)
