@@ -24,6 +24,16 @@ network = [Dense(28 * 28, 10), Tanh(), Dense(10, 10), Tanh()]
 epochs = 1000
 learning_rate = 0.1
 
+for x, y in list(zip(X, Y))[:20]:
+    output = x
+    for layer in network:
+        output = layer.forward(output)
+
+    print(f"actual y = {y[0,0]}, prediction {np.argmax(output)}")
+    print("-" * 50)
+
+print("-" * 30 + "before trained" + "-" * 30)
+
 for epoch in range(epochs):
     err = 0
     for x, y in zip(X, Y):
@@ -39,7 +49,8 @@ for epoch in range(epochs):
             grad = layer.backward(grad, learning_rate)
 
     err /= len(X)
-    print(f"epoch {epoch} error = {err}")
+    if epoch % 100 == 0:
+        print(f"epoch {epoch} error = {err:.2f}")
 
 print("-" * 30 + "after trained" + "-" * 30)
 for x, y in list(zip(X, Y))[:20]:
@@ -47,6 +58,5 @@ for x, y in list(zip(X, Y))[:20]:
     for layer in network:
         output = layer.forward(output)
 
-    print(f"actual y = {y}")
-    print(f"prediction = {np.argmax(output)}")
+    print(f"actual y = {y[0,0]}, prediction {np.argmax(output)}")
     print("-" * 50)
