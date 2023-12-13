@@ -14,6 +14,7 @@
                 python311Packages.numpy
                 python311Packages.matplotlib
                 python311Packages.pandas
+                python311Packages.streamlit
 
                 ];
             };
