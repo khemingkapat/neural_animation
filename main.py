@@ -1,62 +1,33 @@
 from neural_network import *
 import numpy as np
 import pandas as pd
+import streamlit as st
+from streamlit_drawable_canvas import st_canvas
+import cv2
 
 
-def mse(y, y_pred):
-    return np.mean(np.power(y - y_pred, 2))
+nw = Network([28 * 28, 10, 10], [Tanh(), Tanh()], "./network")
 
 
-def mse_prime(y, y_pred):
-    return 2 * (y_pred - y) / np.size(y)
+SIZE = 28 * 10
+canvas_result = st_canvas(
+    fill_color="#ffffff",
+    stroke_width=20,
+    stroke_color="#000000",
+    background_color="#ffffff",
+    width=SIZE,
+    height=SIZE,
+    drawing_mode="freedraw",
+    key="canvas",
+)
 
+if st.button("Predict"):
+    img = cv2.resize(canvas_result.image_data.astype("uint8"), (28, 28))
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = img.astype("float32")
+    img = 255 - img
+    img /= 255
+    img = img.reshape(784, 1)
+    output = nw.forward(img)
 
-data = pd.read_csv("./train.csv").values[:100]
-np.random.shuffle(data)
-
-X = data[:, 1:].reshape(-1, 784, 1) / 255
-Y = data[:, 0].reshape(-1, 1, 1)
-print(np.unique(Y))
-
-
-network = [Dense(28 * 28, 10), Tanh(), Dense(10, 10), Tanh()]
-
-epochs = 1000
-learning_rate = 0.1
-
-for x, y in list(zip(X, Y))[:20]:
-    output = x
-    for layer in network:
-        output = layer.forward(output)
-
-    print(f"actual y = {y[0,0]}, prediction {np.argmax(output)}")
-    print("-" * 50)
-
-print("-" * 30 + "before trained" + "-" * 30)
-
-for epoch in range(epochs):
-    err = 0
-    for x, y in zip(X, Y):
-        output = x
-        for layer in network:
-            output = layer.forward(output)
-
-        y_true = np.eye(10)[y].T.reshape(-1, 1)
-        err += mse(y_true, output)
-        grad = mse_prime(y_true, output)
-
-        for layer in reversed(network):
-            grad = layer.backward(grad, learning_rate)
-
-    err /= len(X)
-    if epoch % 100 == 0:
-        print(f"epoch {epoch} error = {err:.2f}")
-
-print("-" * 30 + "after trained" + "-" * 30)
-for x, y in list(zip(X, Y))[:20]:
-    output = x
-    for layer in network:
-        output = layer.forward(output)
-
-    print(f"actual y = {y[0,0]}, prediction {np.argmax(output)}")
-    print("-" * 50)
+    st.write(f"# {np.argmax(output)}")

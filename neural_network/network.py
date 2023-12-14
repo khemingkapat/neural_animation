@@ -1,42 +1,50 @@
-from .layer import Layer
 import numpy as np
+from .dense import Dense
+import pandas as pd
 
 
 class Network:
-    def __init__(self, n_inputs, n_neurons, activations):
-        self.n_layers = len(n_neurons)
+    def __init__(self, neurons, acts, model_path=None):
         self.layers = []
-        all_neurons = [n_inputs] + n_neurons
-        for i in range(1, len(n_neurons) + 1):
-            self.layers.append(
-                Layer(all_neurons[i - 1], all_neurons[i], activations[i - 1])
-            )
+        if model_path:
+            for idx in range(len(neurons) - 1):
+                self.layers.append(
+                    Dense(neurons[idx], neurons[idx + 1], f"{model_path}/layer{idx+1}")
+                )
+                self.layers.append(acts[idx])
+        else:
+            for idx in range(len(neurons) - 1):
+                self.layers.append(Dense(neurons[idx], neurons[idx + 1]))
+                self.layers.append(acts[idx])
 
     def forward(self, x):
+        output = x
         for layer in self.layers:
-            x = layer.forward(x)
+            output = layer.forward(output)
 
-        self.z = x
-        return self.z
+        return output
 
-    def accuracy(self, y):
-        prediction = np.argmax(self.z, 0)
-        print(self.z)
-        print(prediction)
-        return (prediction == y).mean()
+    def gradient_descent(self, X, Y, iteration, learning_rate):
+        def mse(y, y_pred):
+            return np.mean(np.power(y - y_pred, 2))
 
-    def gradient_descent(self, x, y, learning_rate, iterations):
-        y_true = np.eye(x.shape[0])[y].T
-        for iter in range(iterations):
-            self.forward(x)
+        def mse_prime(y, y_pred):
+            return 2 * (y_pred - y) / np.size(y)
 
-            out_grad = (2 / y.shape[0]) * (self.z - y_true)
-            mse = ((y_true - self.z) ** 2).mean()
-            if iter % 10 == 0:
-                print(f"iter {iter} ==> mse = {mse}")
-                print(f"Accuracy ==> {self.accuracy(y)}")
-                print("-" * 30)
-            for l in self.layers[::-1]:
-                out_grad = l.backward(out_grad, learning_rate)
+        for _ in range(iteration):
+            err = 0
+            for x, y in zip(X, Y):
+                output = x
+                for layer in self.layers:
+                    output = layer.forward(output)
+                y_true = np.eye(10)[y].T.reshape(-1, 1)
+                err += mse(y_true, output)
+                grad = mse_prime(y_true, output)
 
-        return np.power((y - self.z), 2).mean()
+                for layer in reversed(self.layers):
+                    grad = layer.backward(grad, learning_rate)
+
+    def save_model(self):
+        for idx, layer in enumerate(self.layers[::2], start=1):
+            pd.DataFrame(layer.weight).to_csv(f"./network/layer{idx}_weight.csv")
+            pd.DataFrame(layer.bias).to_csv(f"./network/layer{idx}_bias.csv")

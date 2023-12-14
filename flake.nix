@@ -10,11 +10,12 @@
         {
           devShells.default = pkgs.mkShell {
                 nativeBuildInputs = with pkgs; [
-                python311
-                python311Packages.numpy
-                python311Packages.matplotlib
-                python311Packages.pandas
-                python311Packages.streamlit
+                    python311
+                    python311Packages.numpy
+                    python311Packages.matplotlib
+                    python311Packages.pandas
+                    python311Packages.streamlit
+                    python311Packages.polars
 
                 ];
             };
