@@ -12,12 +12,22 @@ class Dense(Layer):
             self.weight = pd.read_csv(f"{model_path}_weight.csv").values[:, 1:]
             self.bias = pd.read_csv(f"{model_path}_bias.csv").values[:, 1:]
 
+        self.learning_weights = [self.weight]
+        self.learning_biases = [self.bias]
+
     def forward(self, input):
         self.input = input
         return self.weight.dot(self.input) + self.bias
 
     def backward(self, out_grad, learning_rate):
         weight_grad = out_grad.dot(self.input.T)
-        self.weight -= learning_rate * weight_grad
-        self.bias -= learning_rate * out_grad
+        dw = self.weight - learning_rate * weight_grad
+        db = self.bias - learning_rate * out_grad
+
+        self.learning_weights.append(dw)
+        self.learning_biases.append(db)
+
+        self.weight = dw
+        self.bias = db
+
         return self.weight.T.dot(out_grad)

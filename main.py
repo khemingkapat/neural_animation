@@ -67,19 +67,11 @@ network = Network(neurons, activations)
 if st.button("Start"):
     start_time = time.time()
     # write error to .csv file
-    with open("error.csv", "w", newline="") as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(["Epoch", "Error"])  # Write header row
-        plot_data = list(network.gradient_descent(X, Y, epochs, learning_rate))
-        plot_data = np.array(plot_data)
-        for epoch, err in plot_data:
-            writer.writerow([epoch, err * 100])
-
-        csvfile.close()
+    plot_data = np.array(list(network.gradient_descent(X, Y, epochs, learning_rate)))
 
     # Visualize accuracy and loss using matplotlib
     fig, ax = plt.subplots(figsize=(12, 5))
-    ax.plot(pd.read_csv("error.csv")["Error"], "r", label="Error Rate")
+    ax.plot(plot_data[:, 0], plot_data[:, 1], "r", label="Error Rate")
     ax.set_title("Error Rate")
     ax.set_xlabel("Epochs")
     ax.set_ylabel("Error percentage")
@@ -105,118 +97,133 @@ if st.button("Start"):
     loss /= len(X)
     st.write("# Loss: ", round(loss, 5))
 
-    # # Show table of weights and biases
-    # col1, col2 = st.columns([10,1])
-    # col1.header('Weights')
-    # col1.write(network[0].weight)
-    # col2.header('Biases')
-    # col2.write(network[0].bias)
+    for layer in network.layers[::2]:
+        weights = layer.learning_weights
+        weights = [weight * 10 for weight in weights]
+        fig, ax = plt.subplots()
+
+        heat = ax.matshow(weights[0])
+        the_plot = st.pyplot(plt)
+
+        for i in range(0, epochs + 1, int(epochs / 100)):
+            heat.set_data(weights[i])
+            ax.set_title(f"epoch : {i}")
+            the_plot.pyplot(plt)
+            time.sleep(0.1)
+
+    # for layer in network.layers[::2]:
+    #     weights = layer.learning_weights
+    #     img = st.image(weights[0] / weights[0].max())
+    #
+    #     for w in weights[1:]:
+    #         img.update(w)
+    #         time.sleep(0.01)
 
     # Show Weights as a heatmaps using matplotlib.pyplot from layer to node
     # loop through every layer
-    for i, layer in enumerate(network.layers):
-        if hasattr(layer, "weight"):
-            st.subheader(
-                "Heatmap of Weights from layer {} to layer {}".format(
-                    int(i / 2), int(i / 2 + 1)
-                )
-            )
-            if i == 0:  # If first layer
-                data = layer.weight
-                data = data.reshape(
-                    nodes, image_size, image_size
-                )  # Split data into nodes * image_size * image_size matrices
-                data = data.tolist()
-                # create heatmap for 1st layer to 2nd layer
-                for j in range(nodes):
-                    heatmap_data = pd.DataFrame(data[j])
-                    heatmap_data.columns = [
-                        str(k) for k in range(28)
-                    ]  # Set column names as string numbers
-                    heatmap_data.index = [
-                        str(k) for k in range(28)
-                    ]  # Set index names as string numbers
-                    heatmap_data_list = heatmap_data.values.tolist()
-                    heatmap_data_list = [
-                        [k, l, heatmap_data_list[k][l]]
-                        for k in range(28)
-                        for l in range(28)
-                    ]  # Adjust the range to 28
-
-                    # Show Weights as a heatmaps using matplotlib.pyplot
-                    fig, ax = plt.subplots(figsize=(10, 10))
-                    # set title of each heatmap
-                    ax.set_title(
-                        f"Heatmap of Weights from layer {i} to node {j} in layer {i+1}"
-                    )
-                    ax = sns.heatmap(heatmap_data, cmap="coolwarm")
-                    st.pyplot(fig)
-
-            else:  # If not first layer, show heat map size of nodes * nodes
-                data = layer.weight
-                data = data.reshape(nodes, nodes)
-                data = data.tolist()
-                # create heatmap for Nnd layer to (N+1)rd layer
-                heatmap_data = pd.DataFrame(data)
-                heatmap_data.columns = [str(k) for k in range(nodes)]
-                heatmap_data.index = [str(k) for k in range(nodes)]
-                heatmap_data_list = heatmap_data.values.tolist()
-                heatmap_data_list = [
-                    [k, l, heatmap_data_list[k][l]]
-                    for k in range(nodes)
-                    for l in range(nodes)
-                ]
-
-            # Show Weights as a heatmaps using matplotlib.pyplot
-            fig, ax = plt.subplots(figsize=(10, 10))
-            # set title of each heatmap
-            ax.set_title(
-                f"Heatmap of Weights from layer {int(i/2)} to layer {int(i/2+1)}"
-            )
-            ax = sns.heatmap(heatmap_data, cmap="coolwarm")
-            st.pyplot(fig)
-
-            # Show Biases as a barchart using matplotlib.pyplot
-            st.subheader(
-                "Biases from layer {} to layer {}".format(int(i / 2), int(i / 2 + 1))
-            )
-            data = network.layers[i].bias
-            data = data.reshape(nodes, 1)  # Split 10 into 10 1x1 matrices
-            data = data.tolist()
-            data = [j[0] for j in data]  # Convert to 1D list
-
-            # Show Biases as a barchart using matplotlib.pyplot
-            fig, ax = plt.subplots(figsize=(10, 10))
-            # set title of each barchart
-            ax.set_title(
-                "Biases from layer {} to layer {}".format(int(i / 2), int(i / 2 + 1))
-            )
-            bars = ax.bar([str(j) for j in range(nodes)], data)
-
-            # Add labels to each bar
-            for bar in bars:
-                height = bar.get_height()
-                ax.annotate(
-                    f"{height}",
-                    xy=(bar.get_x() + bar.get_width() / 2, height),
-                    xytext=(0, 3),
-                    textcoords="offset points",
-                    ha="center",
-                    va="bottom",
-                )
-
-            st.pyplot(fig)
-
-        # print(i)
-
-    # print("-" * 30 + "after trained" + "-" * 30)
-    # for x, y in list(zip(X, Y))[:20]:
-    #     output = network.forward(x)
+    # for i, layer in enumerate(network.layers):
+    #     if hasattr(layer, "weight"):
+    #         st.subheader(
+    #             "Heatmap of Weights from layer {} to layer {}".format(
+    #                 int(i / 2), int(i / 2 + 1)
+    #             )
+    #         )
+    #         if i == 0:  # If first layer
+    #             data = layer.weight
+    #             data = data.reshape(
+    #                 nodes, image_size, image_size
+    #             )  # Split data into nodes * image_size * image_size matrices
+    #             data = data.tolist()
+    #             # create heatmap for 1st layer to 2nd layer
+    #             for j in range(nodes):
+    #                 heatmap_data = pd.DataFrame(data[j])
+    #                 heatmap_data.columns = [
+    #                     str(k) for k in range(28)
+    #                 ]  # Set column names as string numbers
+    #                 heatmap_data.index = [
+    #                     str(k) for k in range(28)
+    #                 ]  # Set index names as string numbers
+    #                 heatmap_data_list = heatmap_data.values.tolist()
+    #                 heatmap_data_list = [
+    #                     [k, l, heatmap_data_list[k][l]]
+    #                     for k in range(28)
+    #                     for l in range(28)
+    #                 ]  # Adjust the range to 28
     #
-    #     print(f"actual y = {y}")
-    #     print(f"prediction = {np.argmax(output)}")
-    #     print("-" * 50)
-
+    #                 # Show Weights as a heatmaps using matplotlib.pyplot
+    #                 fig, ax = plt.subplots(figsize=(10, 10))
+    #                 # set title of each heatmap
+    #                 ax.set_title(
+    #                     f"Heatmap of Weights from layer {i} to node {j} in layer {i+1}"
+    #                 )
+    #                 ax = sns.heatmap(heatmap_data, cmap="coolwarm")
+    #                 st.pyplot(fig)
+    #
+    #         else:  # If not first layer, show heat map size of nodes * nodes
+    #             data = layer.weight
+    #             data = data.reshape(nodes, nodes)
+    #             data = data.tolist()
+    #             # create heatmap for Nnd layer to (N+1)rd layer
+    #             heatmap_data = pd.DataFrame(data)
+    #             heatmap_data.columns = [str(k) for k in range(nodes)]
+    #             heatmap_data.index = [str(k) for k in range(nodes)]
+    #             heatmap_data_list = heatmap_data.values.tolist()
+    #             heatmap_data_list = [
+    #                 [k, l, heatmap_data_list[k][l]]
+    #                 for k in range(nodes)
+    #                 for l in range(nodes)
+    #             ]
+    #
+    #         # Show Weights as a heatmaps using matplotlib.pyplot
+    #         fig, ax = plt.subplots(figsize=(10, 10))
+    #         # set title of each heatmap
+    #         ax.set_title(
+    #             f"Heatmap of Weights from layer {int(i/2)} to layer {int(i/2+1)}"
+    #         )
+    #         ax = sns.heatmap(heatmap_data, cmap="coolwarm")
+    #         st.pyplot(fig)
+    #
+    #         # Show Biases as a barchart using matplotlib.pyplot
+    #         st.subheader(
+    #             "Biases from layer {} to layer {}".format(int(i / 2), int(i / 2 + 1))
+    #         )
+    #         data = network.layers[i].bias
+    #         data = data.reshape(nodes, 1)  # Split 10 into 10 1x1 matrices
+    #         data = data.tolist()
+    #         data = [j[0] for j in data]  # Convert to 1D list
+    #
+    #         # Show Biases as a barchart using matplotlib.pyplot
+    #         fig, ax = plt.subplots(figsize=(10, 10))
+    #         # set title of each barchart
+    #         ax.set_title(
+    #             "Biases from layer {} to layer {}".format(int(i / 2), int(i / 2 + 1))
+    #         )
+    #         bars = ax.bar([str(j) for j in range(nodes)], data)
+    #
+    #         # Add labels to each bar
+    #         for bar in bars:
+    #             height = bar.get_height()
+    #             ax.annotate(
+    #                 f"{height}",
+    #                 xy=(bar.get_x() + bar.get_width() / 2, height),
+    #                 xytext=(0, 3),
+    #                 textcoords="offset points",
+    #                 ha="center",
+    #                 va="bottom",
+    #             )
+    #
+    #         st.pyplot(fig)
+    #
+    #     # print(i)
+    #
+    # # print("-" * 30 + "after trained" + "-" * 30)
+    # # for x, y in list(zip(X, Y))[:20]:
+    # #     output = network.forward(x)
+    # #
+    # #     print(f"actual y = {y}")
+    # #     print(f"prediction = {np.argmax(output)}")
+    # #     print("-" * 50)
+    #
     # Show time taken to train
     end_time = time.time()
     execution_time = end_time - start_time
