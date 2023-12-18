@@ -22,16 +22,18 @@ def mse_prime(y, y_pred):
 
 data = pd.read_csv("./train.csv").values
 np.random.shuffle(data)
+data = data[:100]
 
 
 st.title("My Neural Network")
 st.subheader("Hello")
-pic = st.slider("Number of Picture for Training", 100, 1000, 500, 100)
-data = data[:pic]
+# pic = st.slider("Number of Picture for Training", 100, 200, 150, 10)
+# data = data[:pic]
 
 
 X = data[:, 1:].reshape(-1, 784, 1) / 255
 Y = data[:, 0].reshape(-1, 1, 1)
+
 
 # User input for number of epochs and hidden layers
 epochs = st.slider("Number of Epochs 10 power by", 2, 4, 3)
@@ -98,26 +100,31 @@ if st.button("Start"):
     st.write("# Loss: ", round(loss, 5))
 
     for layer in network.layers[::2]:
-        weights = layer.learning_weights
+        base_shape = layer.learning_weights[0].shape
+
+        weights = []
+
+        base = np.zeros(base_shape)
+        for idx, weight in enumerate(layer.learning_weights):
+            base += weight
+            if idx % 100 == 0:
+                weights.append(base / 100)
+                base = weight
+
+        weights = weights[:: int(epochs / 100)]
         weights = [weight * 10 for weight in weights]
+
+        norm_weight = [weight / np.linalg.norm(weight) for weight in weights]
         fig, ax = plt.subplots()
 
-        heat = ax.matshow(weights[0])
-        the_plot = st.pyplot(plt)
+        heat = ax.matshow(norm_weight[0])
+        the_plot = st.pyplot(fig)
 
-        for i in range(0, epochs + 1, int(epochs / 100)):
-            heat.set_data(weights[i])
+        for i in range(len(norm_weight)):
+            heat.set_data(norm_weight[i])
             ax.set_title(f"epoch : {i}")
-            the_plot.pyplot(plt)
-            time.sleep(0.1)
-
-    # for layer in network.layers[::2]:
-    #     weights = layer.learning_weights
-    #     img = st.image(weights[0] / weights[0].max())
-    #
-    #     for w in weights[1:]:
-    #         img.update(w)
-    #         time.sleep(0.01)
+            the_plot.pyplot(fig)
+            time.sleep(0.01)
 
     # Show Weights as a heatmaps using matplotlib.pyplot from layer to node
     # loop through every layer
