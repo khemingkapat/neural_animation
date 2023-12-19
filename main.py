@@ -3,10 +3,8 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 from streamlit_echarts import st_echarts
-import csv
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 from pyecharts import options as opts
 from pyecharts.charts import HeatMap
 import time
@@ -174,6 +172,7 @@ if st.button("Start"):
     st.write("# Loss: ", round(loss, 5))
 
     for lidx, layer in enumerate(network.layers[::2]):
+        st.write(f"# Weights and Biases of layer {lidx+1}")
         base_shape = layer.learning_weights[0].shape
 
         weights = []
@@ -196,26 +195,52 @@ if st.button("Start"):
             ]
 
             fig, axs = plt.subplots(2, 5, figsize=(20, 10))
-            the_plot = st.pyplot(fig)
+            heat_plot = st.pyplot(fig)
             for i in range(len(norm_weight)):
                 for j in range(layer.output_size):
                     ax = axs[j % 2, j // 2]
                     heat = ax.matshow(norm_weight[i][j])
 
                 fig.suptitle(f"epoch : {i*(int(epochs/10))}", fontsize=16)
-                the_plot.pyplot(fig)
+                heat_plot.pyplot(fig)
 
         else:
             fig, ax = plt.subplots()
 
             heat = ax.matshow(norm_weight[0])
-            the_plot = st.pyplot(fig)
+            heat_plot = st.pyplot(fig)
 
             for i in range(len(norm_weight)):
                 heat.set_data(norm_weight[i])
                 ax.set_title(f"epoch : {i*int(epochs/10)}")
-                the_plot.pyplot(fig)
+                heat_plot.pyplot(fig)
                 time.sleep(0.1)
+
+        # bias part
+        base_shape = layer.learning_biases[0].shape
+
+        biases = []
+
+        base = np.zeros(base_shape)
+        for idx, bias in enumerate(layer.learning_biases):
+            base += bias
+            if idx % 99 == 0:
+                biases.append(base / 100)
+                base = bias
+
+        biases = biases[:: int(epochs / 10)]
+        biases = [bias * 10 for bias in biases]
+
+        norm_bias = [(bias / np.linalg.norm(bias)).reshape(1, -1) for bias in biases]
+        x = [f"bias {i}" for i in range(1, len(norm_bias[0].tolist()[0]) + 1)]
+        chart = st.empty()
+        # my_cmap = plt.get_cmap("inferno")
+        # rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))
+
+        for i in range(len(norm_bias)):
+            data = pd.DataFrame(norm_bias[i].reshape(-1, 1), index=x)
+            chart.bar_chart(data)
+            time.sleep(1)
 
     #
     # Show time taken to train
