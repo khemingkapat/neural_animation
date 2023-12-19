@@ -7,6 +7,7 @@ class Network:
     def __init__(self, neurons, acts, model_path=None):
         self.neurons = neurons
         self.layers = []
+        self.outputs = []
 
         if model_path:
             for idx in range(len(neurons) - 1):
@@ -34,11 +35,15 @@ class Network:
             return 2 * (y_pred - y) / np.size(y)
 
         for iter in range(iteration):
+            outputs = []
             err = 0
             for x, y in zip(X, Y):
                 output = x
-                for layer in self.layers:
+                outputs.append(output)
+                for idx, layer in enumerate(self.layers):
                     output = layer.forward(output)
+                    if idx % 2 == 1:
+                        outputs.append(output)
                 y_true = np.eye(10)[y].T.reshape(-1, 1)
                 err += mse(y_true, output)
                 grad = mse_prime(y_true, output)
@@ -46,6 +51,7 @@ class Network:
                 for layer in reversed(self.layers):
                     grad = layer.backward(grad, learning_rate)
 
+            self.outputs.append(outputs)
             yield [iter, err / len(X)]
 
     def save_model(self):

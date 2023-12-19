@@ -48,7 +48,6 @@ def draw_neural_net(network: Network):
                     layer_sizes[i + 1]
                 ):  # loop through each node in the next layer
                     G.add_edge((i, j), (i + 1, k), weight=weights[i][k][j])
-
         pos = {}  # position of each node
         for i, layer_size in enumerate(layer_sizes):  # loop through each layer
             layer_height = (layer_size - 1) / 2.0  # calculate the height of the layer
@@ -59,6 +58,8 @@ def draw_neural_net(network: Network):
                 ]  # set position of each node based on layer and index of node in layer
 
         weights = nx.get_edge_attributes(G, "weight").values()
+        node_output = network.outputs[epoch]
+        nodes = [node_output[l][n][0] * 10 for l, n in G.nodes]
 
         nx.draw(
             G,
@@ -66,7 +67,8 @@ def draw_neural_net(network: Network):
             with_labels=False,
             arrows=False,
             node_size=200,
-            node_color="black",
+            node_color=nodes,
+            cmap=plt.cm.Blues,
             edge_color=weights,
             edge_cmap=plt.cm.inferno,
         )  # draw the neural network with black node color
@@ -140,7 +142,7 @@ if st.button("Start"):
     start_time = time.time()
     plot_data = np.array(list(network.gradient_descent(X, Y, epochs, learning_rate)))
 
-    print(neurons)
+    st.write(f"# Network predicting for number : {Y[0,0,0]}")
     draw_neural_net(network)
 
     # Visualize accuracy and loss using matplotlib
@@ -200,7 +202,7 @@ if st.button("Start"):
                     ax = axs[j % 2, j // 2]
                     heat = ax.matshow(norm_weight[i][j])
 
-                fig.suptitle(f"epoch : {i}", fontsize=16)
+                fig.suptitle(f"epoch : {i*(int(epochs/10))}", fontsize=16)
                 the_plot.pyplot(fig)
 
         else:
@@ -211,114 +213,10 @@ if st.button("Start"):
 
             for i in range(len(norm_weight)):
                 heat.set_data(norm_weight[i])
-                ax.set_title(f"epoch : {i}")
+                ax.set_title(f"epoch : {i*int(epochs/10)}")
                 the_plot.pyplot(fig)
                 time.sleep(0.1)
 
-    # Show Weights as a heatmaps using matplotlib.pyplot from layer to node
-    # loop through every layer
-    # for i, layer in enumerate(network.layers):
-    #     if hasattr(layer, "weight"):
-    #         st.subheader(
-    #             "Heatmap of Weights from layer {} to layer {}".format(
-    #                 int(i / 2), int(i / 2 + 1)
-    #             )
-    #         )
-    #         if i == 0:  # If first layer
-    #             data = layer.weight
-    #             data = data.reshape(
-    #                 nodes, image_size, image_size
-    #             )  # Split data into nodes * image_size * image_size matrices
-    #             data = data.tolist()
-    #             # create heatmap for 1st layer to 2nd layer
-    #             for j in range(nodes):
-    #                 heatmap_data = pd.DataFrame(data[j])
-    #                 heatmap_data.columns = [
-    #                     str(k) for k in range(28)
-    #                 ]  # Set column names as string numbers
-    #                 heatmap_data.index = [
-    #                     str(k) for k in range(28)
-    #                 ]  # Set index names as string numbers
-    #                 heatmap_data_list = heatmap_data.values.tolist()
-    #                 heatmap_data_list = [
-    #                     [k, l, heatmap_data_list[k][l]]
-    #                     for k in range(28)
-    #                     for l in range(28)
-    #                 ]  # Adjust the range to 28
-    #
-    #                 # Show Weights as a heatmaps using matplotlib.pyplot
-    #                 fig, ax = plt.subplots(figsize=(10, 10))
-    #                 # set title of each heatmap
-    #                 ax.set_title(
-    #                     f"Heatmap of Weights from layer {i} to node {j} in layer {i+1}"
-    #                 )
-    #                 ax = sns.heatmap(heatmap_data, cmap="coolwarm")
-    #                 st.pyplot(fig)
-    #
-    #         else:  # If not first layer, show heat map size of nodes * nodes
-    #             data = layer.weight
-    #             data = data.reshape(nodes, nodes)
-    #             data = data.tolist()
-    #             # create heatmap for Nnd layer to (N+1)rd layer
-    #             heatmap_data = pd.DataFrame(data)
-    #             heatmap_data.columns = [str(k) for k in range(nodes)]
-    #             heatmap_data.index = [str(k) for k in range(nodes)]
-    #             heatmap_data_list = heatmap_data.values.tolist()
-    #             heatmap_data_list = [
-    #                 [k, l, heatmap_data_list[k][l]]
-    #                 for k in range(nodes)
-    #                 for l in range(nodes)
-    #             ]
-    #
-    #         # Show Weights as a heatmaps using matplotlib.pyplot
-    #         fig, ax = plt.subplots(figsize=(10, 10))
-    #         # set title of each heatmap
-    #         ax.set_title(
-    #             f"Heatmap of Weights from layer {int(i/2)} to layer {int(i/2+1)}"
-    #         )
-    #         ax = sns.heatmap(heatmap_data, cmap="coolwarm")
-    #         st.pyplot(fig)
-    #
-    #         # Show Biases as a barchart using matplotlib.pyplot
-    #         st.subheader(
-    #             "Biases from layer {} to layer {}".format(int(i / 2), int(i / 2 + 1))
-    #         )
-    #         data = network.layers[i].bias
-    #         data = data.reshape(nodes, 1)  # Split 10 into 10 1x1 matrices
-    #         data = data.tolist()
-    #         data = [j[0] for j in data]  # Convert to 1D list
-    #
-    #         # Show Biases as a barchart using matplotlib.pyplot
-    #         fig, ax = plt.subplots(figsize=(10, 10))
-    #         # set title of each barchart
-    #         ax.set_title(
-    #             "Biases from layer {} to layer {}".format(int(i / 2), int(i / 2 + 1))
-    #         )
-    #         bars = ax.bar([str(j) for j in range(nodes)], data)
-    #
-    #         # Add labels to each bar
-    #         for bar in bars:
-    #             height = bar.get_height()
-    #             ax.annotate(
-    #                 f"{height}",
-    #                 xy=(bar.get_x() + bar.get_width() / 2, height),
-    #                 xytext=(0, 3),
-    #                 textcoords="offset points",
-    #                 ha="center",
-    #                 va="bottom",
-    #             )
-    #
-    #         st.pyplot(fig)
-    #
-    #     # print(i)
-    #
-    # # print("-" * 30 + "after trained" + "-" * 30)
-    # # for x, y in list(zip(X, Y))[:20]:
-    # #     output = network.forward(x)
-    # #
-    # #     print(f"actual y = {y}")
-    # #     print(f"prediction = {np.argmax(output)}")
-    # #     print("-" * 50)
     #
     # Show time taken to train
     end_time = time.time()
