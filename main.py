@@ -10,6 +10,73 @@ import seaborn as sns
 from pyecharts import options as opts
 from pyecharts.charts import HeatMap
 import time
+import networkx as nx
+
+
+def draw_neural_net(network: Network):
+    """
+    Draw a neural network cartoon using matplotlib and networkx.
+
+    :param layer_sizes: list of layer sizes, including input and output dimensionality
+    """
+    node_spacing = 1
+    max_nodes = 14
+    layer_sizes = network.neurons
+    layer_sizes = list(map(lambda x: min([max_nodes, x]), layer_sizes))
+    st.set_option("deprecation.showPyplotGlobalUse", False)  # disable warning
+    network_plot = st.pyplot()
+
+    for epoch in range(0, epochs, int(epochs / 10)):
+        # Create a new figure
+        G = nx.DiGraph()
+        for i in range(len(layer_sizes) - 1):  # loop through each layer
+            layer = network.layers[::2][i]
+            base_shape = layer.learning_weights[0].shape
+            weights = []
+            base = np.zeros(base_shape)
+            for idx, weight in enumerate(layer.learning_weights):
+                base += weight
+                if idx % 99 == 0:
+                    weights.append(base / 100)
+                base = weight
+
+            weights = weights[:: int(epochs / 10)]
+            weights = [weight * 10 for weight in weights]
+            norm_weight = [weight / np.linalg.norm(weight) for weight in weights]
+            for j in range(layer_sizes[i]):  # loop through each node in the layer
+                for k in range(
+                    layer_sizes[i + 1]
+                ):  # loop through each node in the next layer
+                    G.add_edge((i, j), (i + 1, k), weight=weights[i][k][j])
+
+        pos = {}  # position of each node
+        for i, layer_size in enumerate(layer_sizes):  # loop through each layer
+            layer_height = (layer_size - 1) / 2.0  # calculate the height of the layer
+            for j in range(layer_size):  # loop through each node in the layer
+                pos[(i, j)] = [
+                    i,
+                    layer_height - j * node_spacing,
+                ]  # set position of each node based on layer and index of node in layer
+
+        weights = nx.get_edge_attributes(G, "weight").values()
+
+        nx.draw(
+            G,
+            pos,
+            with_labels=False,
+            arrows=False,
+            node_size=200,
+            node_color="black",
+            edge_color=weights,
+            edge_cmap=plt.cm.inferno,
+        )  # draw the neural network with black node color
+        plt.title(f"Neural Network Graph Epoch {epoch}")  # set the title of the plot
+        # plt.show() # display the plot of the neural network graph
+        network_plot.pyplot()
+
+    st.write(
+        "This is a graph of the neural network, the red edges are the edges from the input layer to the hidden layer, the blue edges are the edges from the hidden layer to the hidden layer, and the green edges are the edges from the hidden layer to the output layer. "
+    )
 
 
 def mse(y, y_pred):
@@ -27,7 +94,7 @@ data = data[:100]
 
 st.title("My Neural Network")
 st.subheader("Hello")
-# pic = st.slider("Number of Picture for Training", 100, 200, 150, 10)
+# pic = st.slider("Number of Picture for Training", 100, 500, 250, 10)
 # data = data[:pic]
 
 
@@ -45,31 +112,36 @@ learning_rate = 10**learning_rate
 # image_size = st.slider('Image Size', 1, 28, 28)
 
 # User input for number of hidden layers
-num_layers = st.slider("Number of Hidden Layers", 1, 9, 1) + 1
+num_layers = st.slider("Number of Hidden Layers", 1, 5, 1)
+neurons = [
+    st.slider(f"Number of neurons in layer{i+1}", 1, 15, 8) for i in range(num_layers)
+]
+
 
 image_size = 28
 # User input for number of nodes
 # nodes = st.slider('Number of Nodes', 10, 16, 10)
-nodes = 10
+# nodes = 10
 
 # User input for choice of activation function
 activation = st.selectbox("Activation Function", ["Tanh", "ReLU", "Sigmoid"])
-neurons = []
 activations = []
-neurons.append(image_size**2)
-neurons.append(nodes)
 activations.append(eval(f"{activation}()"))
 
-for _ in range(num_layers - 1):
-    neurons.append(nodes)
+neurons = [28**2] + neurons + [10]
+
+for _ in range(num_layers):
     activations.append(eval(f"{activation}()"))
 network = Network(neurons, activations)
 
 # Add trend button to start
 if st.button("Start"):
+    print("started")
     start_time = time.time()
-    # write error to .csv file
     plot_data = np.array(list(network.gradient_descent(X, Y, epochs, learning_rate)))
+
+    print(neurons)
+    draw_neural_net(network)
 
     # Visualize accuracy and loss using matplotlib
     fig, ax = plt.subplots(figsize=(12, 5))
@@ -94,12 +166,12 @@ if st.button("Start"):
     loss = 0
     for x, y in zip(X, Y):
         output = network.forward(x)
-        y_true = np.eye(nodes)[y].T.reshape(-1, 1)
+        y_true = np.eye(10)[y].T.reshape(-1, 1)
         loss += mse(y_true, output)
     loss /= len(X)
     st.write("# Loss: ", round(loss, 5))
 
-    for layer in network.layers[::2]:
+    for lidx, layer in enumerate(network.layers[::2]):
         base_shape = layer.learning_weights[0].shape
 
         weights = []
@@ -107,24 +179,41 @@ if st.button("Start"):
         base = np.zeros(base_shape)
         for idx, weight in enumerate(layer.learning_weights):
             base += weight
-            if idx % 100 == 0:
+            if idx % 99 == 0:
                 weights.append(base / 100)
                 base = weight
 
-        weights = weights[:: int(epochs / 100)]
+        weights = weights[:: int(epochs / 10)]
         weights = [weight * 10 for weight in weights]
 
         norm_weight = [weight / np.linalg.norm(weight) for weight in weights]
-        fig, ax = plt.subplots()
+        if lidx == 0:
+            norm_weight = [
+                weight.reshape(layer.output_size, image_size, image_size).tolist()
+                for weight in norm_weight
+            ]
 
-        heat = ax.matshow(norm_weight[0])
-        the_plot = st.pyplot(fig)
+            fig, axs = plt.subplots(2, 5, figsize=(20, 10))
+            the_plot = st.pyplot(fig)
+            for i in range(len(norm_weight)):
+                for j in range(layer.output_size):
+                    ax = axs[j % 2, j // 2]
+                    heat = ax.matshow(norm_weight[i][j])
 
-        for i in range(len(norm_weight)):
-            heat.set_data(norm_weight[i])
-            ax.set_title(f"epoch : {i}")
-            the_plot.pyplot(fig)
-            time.sleep(0.01)
+                fig.suptitle(f"epoch : {i}", fontsize=16)
+                the_plot.pyplot(fig)
+
+        else:
+            fig, ax = plt.subplots()
+
+            heat = ax.matshow(norm_weight[0])
+            the_plot = st.pyplot(fig)
+
+            for i in range(len(norm_weight)):
+                heat.set_data(norm_weight[i])
+                ax.set_title(f"epoch : {i}")
+                the_plot.pyplot(fig)
+                time.sleep(0.1)
 
     # Show Weights as a heatmaps using matplotlib.pyplot from layer to node
     # loop through every layer

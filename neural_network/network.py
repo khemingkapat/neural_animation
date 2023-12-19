@@ -5,7 +5,9 @@ import pandas as pd
 
 class Network:
     def __init__(self, neurons, acts, model_path=None):
+        self.neurons = neurons
         self.layers = []
+
         if model_path:
             for idx in range(len(neurons) - 1):
                 self.layers.append(
