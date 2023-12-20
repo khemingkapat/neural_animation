@@ -114,8 +114,8 @@ st.subheader(
 st.write(
     "Select the number of epochs (how many time we train the network), higher means more accurate but longer training time"
 )
-epochs = st.slider("Number Epochs ", 0, 1000, 50, 50)
-# epochs = 10**epochs
+epochs = st.slider("Number Epochs (e+epoch) ", 0, 3, 2)
+epochs = 10**epochs
 
 
 # User input for learning rate
@@ -123,7 +123,7 @@ st.write(
     "learning rate, higher learning rate might help on training time but accuracy will be reduced"
 )
 learning_rate = st.slider("Learning Rate 10 power by", 0.1, 1.5, 0.4, 0.1)
-learning_rate = 10**learning_rate
+# learning_rate = 10**learning_rate
 
 
 # User input for number of hidden layers
@@ -293,4 +293,4 @@ if st.button("Start"):
     # Show time taken to train
     end_time = time.time()
     execution_time = end_time - start_time
-    print(f"Execution time: {execution_time} seconds")
+    print(f"excution time: {execution_time} seconds")
