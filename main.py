@@ -1,5 +1,4 @@
 from neural_network import *
-from mycolorpy import colorlist as mcp
 import numpy as np
 import pandas as pd
 import streamlit as st
