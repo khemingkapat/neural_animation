@@ -1,4 +1,5 @@
 from neural_network import *
+from mycolorpy import colorlist as mcp
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -66,9 +67,9 @@ def draw_neural_net(network: Network):
             arrows=False,
             node_size=200,
             node_color=nodes,
-            cmap=plt.cm.Blues,
+            cmap=plt.cm.hot,
             edge_color=weights,
-            edge_cmap=plt.cm.inferno,
+            edge_cmap=plt.cm.coolwarm,
         )  # draw the neural network with black node color
         plt.title(f"Neural Network Graph Epoch {epoch}")  # set the title of the plot
         # plt.show() # display the plot of the neural network graph
@@ -92,38 +93,82 @@ np.random.shuffle(data)
 data = data[:100]
 
 
-st.title("My Neural Network")
-st.subheader("Hello")
-# pic = st.slider("Number of Picture for Training", 100, 500, 250, 10)
-# data = data[:pic]
-
-
 X = data[:, 1:].reshape(-1, 784, 1) / 255
 Y = data[:, 0].reshape(-1, 1, 1)
 
+st.title("My Neural Network")
+st.image("https://img.mit.edu/files/images/202211/MIT-Neural-Networks-SL.gif")
+st.write(
+    """
+## What is Neural Network ?
+
+A neural network is a series of algorithms that endeavors to recognize underlying relationships in a set of data through a process that mimics the way the human brain operates. In essence, neural networks are used to approximate functions that can depend on a large number of inputs and are generally unknown.
+
+Neural networks are a subset of machine learning and are at the heart of deep learning algorithms. They are called "neural" because they are designed to mimic neurons in the human brain. A neuron takes inputs, does some processing, and produces one output. Similarly, a neural network takes a set of inputs, processes them through hidden layers using weights that are adjusted during training, and outputs a prediction representing the combined input signal.
+
+The neural network in this app is being used to recognize handwritten digits, a classic problem in machine learning. The network is trained on a dataset of handwritten digits and their corresponding labels, and it learns to map the input images to the correct digit.
+"""
+)
+st.subheader(
+    "This is a neural network that We made from scratch using Python and NumPy, Let's train a neural network to recognize handwritten digits!"
+)
+
 
 # User input for number of epochs and hidden layers
+st.write(
+    "Select the number of epochs (how many time we train the network), higher means more accurate but longer training time"
+)
 epochs = st.slider("Number of Epochs 10 power by", 2, 4, 3)
 epochs = 10**epochs
+
+
 # User input for learning rate
-learning_rate = st.slider("Learning Rate 10 power by", -6, 0, -2)
+st.write(
+    "learning rate, higher learning rate might help on training time but accuracy will be reduced"
+)
+learning_rate = st.slider("Learning Rate 10 power by", 0.1, 1.5, 0.4, 0.1)
 learning_rate = 10**learning_rate
-# User input for size of image
-# image_size = st.slider('Image Size', 1, 28, 28)
+
 
 # User input for number of hidden layers
+st.write("Number of hidden layer, might help on accuracy or might not ???")
 num_layers = st.slider("Number of Hidden Layers", 1, 5, 1)
+st.write("Number of neurons in each hidden layer(s)")
 neurons = [
-    st.slider(f"Number of neurons in layer{i+1}", 1, 15, 8) for i in range(num_layers)
+    st.slider(f"Number of neurons in Hidden Layer {i+1}", 2, 16, 8, 2)
+    for i in range(num_layers)
 ]
 
 
 image_size = 28
-# User input for number of nodes
-# nodes = st.slider('Number of Nodes', 10, 16, 10)
-# nodes = 10
 
 # User input for choice of activation function
+st.write("Select the activation function, Tanh is the default")
+st.write(
+    """
+## Activation Functions
+
+1. **Tanh (Hyperbolic Tangent):**
+   - Outputs values between -1 and 1.
+   - Symmetric around the origin.
+   - Smooth and differentiable.
+   - Often used in hidden layers of neural networks.
+
+2. **ReLU (Rectified Linear Unit):**
+   - Outputs the input directly if it is positive, otherwise outputs 0.
+   - Computationally efficient and helps alleviate the vanishing gradient problem.
+   - Introduces sparsity in the network by zeroing out negative values.
+   - Commonly used in hidden layers of deep neural networks.
+
+3. **Sigmoid:**
+   - Outputs values between 0 and 1.
+   - Maps the input to a probability-like output.
+   - Useful for binary classification problems.
+   - Suffers from the vanishing gradient problem for very large or small inputs.
+   - Often used in the output layer for binary classification tasks.
+"""
+)
+
 activation = st.selectbox("Activation Function", ["Tanh", "ReLU", "Sigmoid"])
 activations = []
 activations.append(eval(f"{activation}()"))
@@ -136,11 +181,10 @@ network = Network(neurons, activations)
 
 # Add trend button to start
 if st.button("Start"):
-    print("started")
     start_time = time.time()
     plot_data = np.array(list(network.gradient_descent(X, Y, epochs, learning_rate)))
 
-    st.write(f"# Network predicting for number : {Y[0,0,0]}")
+    st.write(f"# Network predicting for number : `{Y[0,0,0]}`")
     draw_neural_net(network)
 
     # Visualize accuracy and loss using matplotlib
@@ -169,10 +213,16 @@ if st.button("Start"):
         y_true = np.eye(10)[y].T.reshape(-1, 1)
         loss += mse(y_true, output)
     loss /= len(X)
-    st.write("# Loss: ", round(loss, 5))
+    st.write("# Loss: ", round(loss * 100, 5), "%")
 
     for lidx, layer in enumerate(network.layers[::2]):
-        st.write(f"# Weights and Biases of layer {lidx+1}")
+        st.write(f"# Layer {lidx+1}")
+        st.write(
+            f"This layer have `{layer.input_size}` inputs to `{layer.output_size}` outputs"
+        )
+        st.write(
+            f"Total of `{layer.input_size * layer.output_size}` weights and `{layer.output_size}` biases"
+        )
         base_shape = layer.learning_weights[0].shape
 
         weights = []
@@ -194,12 +244,12 @@ if st.button("Start"):
                 for weight in norm_weight
             ]
 
-            fig, axs = plt.subplots(2, 5, figsize=(20, 10))
+            fig, axs = plt.subplots(2, int(len(norm_weight[0]) / 2), figsize=(20, 10))
             heat_plot = st.pyplot(fig)
             for i in range(len(norm_weight)):
                 for j in range(layer.output_size):
                     ax = axs[j % 2, j // 2]
-                    heat = ax.matshow(norm_weight[i][j])
+                    heat = ax.matshow(norm_weight[i][j], cmap=plt.cm.coolwarm)
 
                 fig.suptitle(f"epoch : {i*(int(epochs/10))}", fontsize=16)
                 heat_plot.pyplot(fig)
@@ -207,7 +257,7 @@ if st.button("Start"):
         else:
             fig, ax = plt.subplots()
 
-            heat = ax.matshow(norm_weight[0])
+            heat = ax.matshow(norm_weight[0], cmap=plt.cm.coolwarm)
             heat_plot = st.pyplot(fig)
 
             for i in range(len(norm_weight)):
