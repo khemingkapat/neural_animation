@@ -67,7 +67,7 @@ def draw_neural_net(network: Network):
             arrows=False,
             node_size=200,
             node_color=nodes,
-            cmap=plt.cm.hot,
+            cmap=plt.cm.Blues,
             edge_color=weights,
             edge_cmap=plt.cm.coolwarm,
         )  # draw the neural network with black node color
@@ -118,8 +118,8 @@ st.subheader(
 st.write(
     "Select the number of epochs (how many time we train the network), higher means more accurate but longer training time"
 )
-epochs = st.slider("Number of Epochs 10 power by", 2, 4, 3)
-epochs = 10**epochs
+epochs = st.slider("Number Epochs ", 0, 1000, 50, 50)
+# epochs = 10**epochs
 
 
 # User input for learning rate
@@ -183,6 +183,7 @@ network = Network(neurons, activations)
 if st.button("Start"):
     start_time = time.time()
     plot_data = np.array(list(network.gradient_descent(X, Y, epochs, learning_rate)))
+    st.write(f"### Total Training Time : {time.time() - start_time:.2f}")
 
     st.write(f"# Network predicting for number : `{Y[0,0,0]}`")
     draw_neural_net(network)
