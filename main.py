@@ -2,11 +2,8 @@ from neural_network import *
 import numpy as np
 import pandas as pd
 import streamlit as st
-from streamlit_echarts import st_echarts
 import pandas as pd
 import matplotlib.pyplot as plt
-from pyecharts import options as opts
-from pyecharts.charts import HeatMap
 import time
 import networkx as nx
 
