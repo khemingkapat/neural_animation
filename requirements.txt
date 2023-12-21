@@ -41,6 +41,7 @@ Pillow==10.1.0
 prettytable==3.9.0
 protobuf==4.25.1
 pyarrow==14.0.1
+pycairo==1.25.1
 pydeck==0.8.1b0
 pyecharts==2.0.4
 Pygments==2.17.2
